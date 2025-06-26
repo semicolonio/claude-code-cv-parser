@@ -1,0 +1,1026 @@
+{% extends "base.html" %}
+
+{% block title %}Progressive CV Parsing - {{ filename }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">Progressive CV Parsing</h1>
+                <p class="text-lg text-gray-600 mt-2">Processing: {{ filename }}</p>
+            </div>
+            <div>
+                <a href="{{ url_for('index') }}" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to Upload
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-8">
+        <!-- Left Column - Progress Steps -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-lg shadow-md p-6 sticky top-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                    <i class="fas fa-tasks text-blue-600 mr-2"></i>
+                    Parsing Progress
+                </h2>
+                
+                <div id="progress-steps" class="space-y-4">
+                    <!-- Steps will be populated by JavaScript -->
+                    <div class="step-item" data-step="basic_info">
+                        <div class="flex items-center">
+                            <div class="step-icon w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                <i class="fas fa-user text-gray-500 text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="step-title font-medium text-gray-900">Basic Information</div>
+                                <div class="step-status text-sm text-gray-500">Waiting...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="step-item" data-step="skills">
+                        <div class="flex items-center">
+                            <div class="step-icon w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                <i class="fas fa-tools text-gray-500 text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="step-title font-medium text-gray-900">Skills & Technologies</div>
+                                <div class="step-status text-sm text-gray-500">Waiting...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="step-item" data-step="experience">
+                        <div class="flex items-center">
+                            <div class="step-icon w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                <i class="fas fa-briefcase text-gray-500 text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="step-title font-medium text-gray-900">Work Experience</div>
+                                <div class="step-status text-sm text-gray-500">Waiting...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="step-item" data-step="education">
+                        <div class="flex items-center">
+                            <div class="step-icon w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                <i class="fas fa-graduation-cap text-gray-500 text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="step-title font-medium text-gray-900">Education</div>
+                                <div class="step-status text-sm text-gray-500">Waiting...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="step-item" data-step="projects_certs">
+                        <div class="flex items-center">
+                            <div class="step-icon w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                <i class="fas fa-project-diagram text-gray-500 text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="step-title font-medium text-gray-900">Projects & Certifications</div>
+                                <div class="step-status text-sm text-gray-500">Waiting...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="step-item" data-step="finalize">
+                        <div class="flex items-center">
+                            <div class="step-icon w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center mr-3">
+                                <i class="fas fa-check text-gray-500 text-sm"></i>
+                            </div>
+                            <div class="flex-1">
+                                <div class="step-title font-medium text-gray-900">Finalization</div>
+                                <div class="step-status text-sm text-gray-500">Waiting...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Overall Progress Bar -->
+                <div class="mt-6">
+                    <div class="flex justify-between text-sm text-gray-600 mb-2">
+                        <span>Overall Progress</span>
+                        <span id="overall-percentage">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div id="overall-progress" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column - Live Results & Logs -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Live Results -->
+            <div id="live-results" class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                    <i class="fas fa-eye text-green-600 mr-2"></i>
+                    Live Results
+                </h2>
+                
+                <div id="results-content" class="space-y-4">
+                    <div id="initial-placeholder" class="text-center text-gray-500 py-8">
+                        <div class="relative inline-block">
+                            <i class="fas fa-hourglass-start text-4xl mb-4 animate-pulse"></i>
+                            <div class="absolute -top-2 -right-2">
+                                <div class="w-3 h-3 bg-blue-500 rounded-full animate-ping"></div>
+                            </div>
+                        </div>
+                        <p>Initializing CV parsing...</p>
+                        <div class="mt-4 flex justify-center space-x-2">
+                            <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                            <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                            <div class="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Activity Log (Collapsible) -->
+            <div class="bg-white rounded-lg shadow-md">
+                <div class="p-4 border-b border-gray-200">
+                    <button id="toggle-activity-log" class="w-full flex items-center justify-between text-left hover:bg-gray-50 transition-colors duration-200 rounded-lg p-2">
+                        <div class="flex items-center">
+                            <i class="fas fa-terminal text-purple-600 mr-2"></i>
+                            <h2 class="text-lg font-semibold text-gray-900">Activity Log</h2>
+                            <span id="log-count" class="ml-2 bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded-full">3</span>
+                        </div>
+                        <div class="flex items-center text-gray-500">
+                            <span id="toggle-text" class="text-sm mr-2">Show Details</span>
+                            <i id="toggle-icon" class="fas fa-chevron-down transition-transform duration-200"></i>
+                        </div>
+                    </button>
+                </div>
+                
+                <div id="activity-log-container" class="hidden">
+                    <div class="p-4">
+                        <div id="activity-log" class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm max-h-64 overflow-y-auto">
+                            <div class="log-entry">
+                                <span class="text-gray-500">[SYSTEM]</span> CV Parser initialized...
+                            </div>
+                            <div class="log-entry">
+                                <span class="text-gray-500">[SYSTEM]</span> Connecting to Claude AI...
+                            </div>
+                            <div class="log-entry">
+                                <span class="text-gray-500">[SYSTEM]</span> Ready to begin parsing...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Final Results Section (Hidden initially) -->
+            <div id="final-results-section" class="hidden">
+                <!-- Completion Celebration -->
+                <div class="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-8 mb-6 text-center">
+                    <div class="relative inline-block mb-4">
+                        <div class="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white shadow-lg animate-bounce">
+                            <i class="fas fa-check text-2xl"></i>
+                        </div>
+                        <div class="absolute -top-1 -right-1">
+                            <div class="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center animate-pulse">
+                                <i class="fas fa-star text-white text-xs"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h3 class="text-2xl font-bold text-gray-900 mb-2">🎉 Parsing Complete!</h3>
+                    <p class="text-gray-700 text-lg mb-4">
+                        I've successfully analyzed the CV and extracted all the key information. 
+                        The candidate profile is now ready for your review!
+                    </p>
+                    
+                    <div class="flex items-center justify-center space-x-6 text-sm text-gray-600 mb-6">
+                        <div class="flex items-center">
+                            <i class="fas fa-user text-green-500 mr-2"></i>
+                            <span>Identity Verified</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-tools text-green-500 mr-2"></i>
+                            <span>Skills Mapped</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-briefcase text-green-500 mr-2"></i>
+                            <span>Experience Analyzed</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-graduation-cap text-green-500 mr-2"></i>
+                            <span>Education Documented</span>
+                        </div>
+                    </div>
+                    
+                    <button id="view-final-results" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-4 px-8 rounded-xl transition duration-200 transform hover:scale-105 shadow-lg">
+                        <i class="fas fa-eye mr-3"></i>
+                        View Complete Candidate Profile
+                        <i class="fas fa-arrow-right ml-3"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Progressive parsing with SSE
+document.addEventListener('DOMContentLoaded', function() {
+    const eventSource = new EventSource('{{ url_for("parse_progressive") }}');
+    const activityLog = document.getElementById('activity-log');
+    const resultsContent = document.getElementById('results-content');
+    const overallProgress = document.getElementById('overall-progress');
+    const overallPercentage = document.getElementById('overall-percentage');
+    
+    let completedSteps = 0;
+    const totalSteps = 6;
+    let finalCandidateData = null;
+    let logCount = 3;
+    let lastLogMessage = '';
+    
+    // Step mappings
+    const stepNames = {
+        'basic_info': 'Basic Information',
+        'skills': 'Skills & Technologies', 
+        'experience': 'Work Experience',
+        'education': 'Education',
+        'projects_certs': 'Projects & Certifications',
+        'finalize': 'Finalization'
+    };
+    
+    function addLogEntry(message, type = 'info') {
+        // Avoid duplicate consecutive messages
+        if (message === lastLogMessage) {
+            return;
+        }
+        lastLogMessage = message;
+        
+        // Skip overly verbose system messages
+        if (message.includes('Launching Claude query') || 
+            message.includes('Preparing') || 
+            message.includes('Building') ||
+            message.includes('Processing request')) {
+            return;
+        }
+        
+        const entry = document.createElement('div');
+        entry.className = 'log-entry opacity-0 transform translate-y-2';
+        
+        const timestamp = new Date().toLocaleTimeString();
+        const typeColor = {
+            'info': 'text-blue-400',
+            'success': 'text-green-400', 
+            'error': 'text-red-400',
+            'processing': 'text-yellow-400'
+        }[type] || 'text-gray-400';
+        
+        entry.innerHTML = `<span class="text-gray-500">[${timestamp}]</span> <span class="${typeColor}">${message}</span>`;
+        activityLog.appendChild(entry);
+        
+        // Update log count
+        logCount++;
+        document.getElementById('log-count').textContent = logCount;
+        
+        // Animate entry in
+        setTimeout(() => {
+            entry.classList.remove('opacity-0', 'transform', 'translate-y-2');
+            entry.classList.add('transition-all', 'duration-300');
+        }, 50);
+        
+        activityLog.scrollTop = activityLog.scrollHeight;
+    }
+    
+    function updateStepStatus(step, status, data = null) {
+        const stepElement = document.querySelector(`[data-step="${step}"]`);
+        if (!stepElement) return;
+        
+        const icon = stepElement.querySelector('.step-icon');
+        const statusElement = stepElement.querySelector('.step-status');
+        const iconElement = icon.querySelector('i');
+        
+        // Update step appearance based on status with animations
+        switch(status) {
+            case 'starting':
+                icon.className = 'step-icon w-8 h-8 rounded-full bg-yellow-200 flex items-center justify-center mr-3 transition-all duration-300';
+                iconElement.className = iconElement.className.replace('text-gray-500', 'text-yellow-600');
+                statusElement.textContent = 'Starting...';
+                // Add pulse animation
+                icon.classList.add('animate-pulse');
+                break;
+                
+            case 'processing':
+                icon.className = 'step-icon w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center mr-3 transition-all duration-300';
+                iconElement.className = iconElement.className.replace('text-gray-500', 'text-blue-600');
+                statusElement.textContent = 'Processing...';
+                
+                // Remove pulse, add spinner
+                icon.classList.remove('animate-pulse');
+                iconElement.className += ' fa-spin';
+                break;
+                
+            case 'completed':
+                icon.className = 'step-icon w-8 h-8 rounded-full bg-green-200 flex items-center justify-center mr-3 transition-all duration-500';
+                iconElement.className = 'fas fa-check text-green-600 text-sm';
+                statusElement.textContent = 'Completed';
+                
+                // Add bounce animation
+                icon.classList.add('animate-bounce');
+                setTimeout(() => icon.classList.remove('animate-bounce'), 1000);
+                
+                completedSteps++;
+                updateOverallProgress();
+                break;
+                
+            case 'error':
+                icon.className = 'step-icon w-8 h-8 rounded-full bg-red-200 flex items-center justify-center mr-3 transition-all duration-300';
+                iconElement.className = 'fas fa-times text-red-600 text-sm';
+                statusElement.textContent = 'Error';
+                break;
+        }
+    }
+    
+    function updateOverallProgress() {
+        const percentage = Math.round((completedSteps / totalSteps) * 100);
+        overallProgress.style.width = percentage + '%';
+        overallPercentage.textContent = percentage + '%';
+    }
+    
+    function addPreviewSection(step, previewText) {
+        const container = document.getElementById('results-content');
+        
+        // Clear initial placeholder
+        if (container.querySelector('#initial-placeholder')) {
+            container.innerHTML = '';
+        }
+        
+        // Add preview section
+        const previewSection = document.createElement('div');
+        previewSection.id = `preview-${step}`;
+        previewSection.className = 'border-2 border-dashed border-gray-300 rounded-lg p-6 mb-4 bg-gray-50 animate-pulse';
+        previewSection.innerHTML = `
+            <div class="text-center">
+                <div class="inline-flex items-center justify-center w-12 h-12 bg-gray-200 rounded-full mb-3">
+                    <i class="fas fa-spinner fa-spin text-gray-500"></i>
+                </div>
+                <p class="text-gray-600 font-medium">${previewText}</p>
+                <div class="mt-3 flex justify-center space-x-1">
+                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                    <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                </div>
+            </div>
+        `;
+        container.appendChild(previewSection);
+        
+        // Scroll to the new preview section
+        setTimeout(() => {
+            previewSection.scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'center' 
+            });
+        }, 100);
+    }
+    
+    function updateLiveResults(step, data) {
+        if (!data) return;
+        
+        const container = document.getElementById('results-content');
+        
+        // Remove preview section for this step
+        const previewSection = document.getElementById(`preview-${step}`);
+        if (previewSection) {
+            previewSection.remove();
+        }
+        
+        // Clear initial placeholder
+        if (container.querySelector('#initial-placeholder')) {
+            container.innerHTML = '';
+        }
+        
+        // Add or update section for this step
+        let section = document.getElementById(`result-${step}`);
+        if (!section) {
+            section = document.createElement('div');
+            section.id = `result-${step}`;
+            section.className = 'border border-gray-200 rounded-lg p-4 mb-4 opacity-0 transform translate-y-4';
+            container.appendChild(section);
+        }
+        
+        // Update section content based on step
+        if (step === 'basic_info') {
+            section.innerHTML = `
+                <div class="flex items-start space-x-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white shadow-lg">
+                            <i class="fas fa-user text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-gray-900 mb-3 flex items-center">
+                            <span class="text-lg">Basic Information</span>
+                            <div class="ml-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        </h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <div class="bg-gray-50 p-3 rounded-lg transform transition-all duration-500 hover:scale-105">
+                                <div class="flex items-center">
+                                    <i class="fas fa-id-card text-blue-500 mr-2"></i>
+                                    <div>
+                                        <div class="text-xs text-gray-500 uppercase tracking-wide">Name</div>
+                                        <div class="font-medium">${data.name || 'N/A'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg transform transition-all duration-500 hover:scale-105">
+                                <div class="flex items-center">
+                                    <i class="fas fa-envelope text-green-500 mr-2"></i>
+                                    <div>
+                                        <div class="text-xs text-gray-500 uppercase tracking-wide">Email</div>
+                                        <div class="font-medium text-sm">${data.email || 'N/A'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-gray-50 p-3 rounded-lg transform transition-all duration-500 hover:scale-105">
+                                <div class="flex items-center">
+                                    <i class="fas fa-phone text-purple-500 mr-2"></i>
+                                    <div>
+                                        <div class="text-xs text-gray-500 uppercase tracking-wide">Phone</div>
+                                        <div class="font-medium">${data.phone || 'N/A'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="md:col-span-2 bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border-l-4 border-blue-500">
+                                <div class="flex items-start">
+                                    <i class="fas fa-quote-left text-blue-500 mr-2 mt-1"></i>
+                                    <div>
+                                        <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Professional Summary</div>
+                                        <div class="text-gray-700 leading-relaxed">${data.summary || 'N/A'}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (step === 'skills') {
+            const skills = data.skills || [];
+            const skillsHtml = skills.map((skill, index) => {
+                const colors = [
+                    'bg-blue-100 text-blue-800 border-blue-200',
+                    'bg-green-100 text-green-800 border-green-200', 
+                    'bg-purple-100 text-purple-800 border-purple-200',
+                    'bg-pink-100 text-pink-800 border-pink-200',
+                    'bg-indigo-100 text-indigo-800 border-indigo-200'
+                ];
+                const colorClass = colors[index % colors.length];
+                return `<span class="${colorClass} text-sm font-medium px-3 py-1 rounded-full border transform transition-all duration-300 hover:scale-110 hover:shadow-md animate-fadeIn" style="animation-delay: ${index * 0.1}s">${skill}</span>`;
+            }).join(' ');
+            
+            section.innerHTML = `
+                <div class="flex items-start space-x-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-16 h-16 bg-gradient-to-br from-purple-400 to-pink-600 rounded-full flex items-center justify-center text-white shadow-lg">
+                            <i class="fas fa-tools text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-gray-900 mb-3 flex items-center">
+                            <span class="text-lg">Technical Skills</span>
+                            <div class="ml-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                            <span class="ml-2 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">${skills.length} skills</span>
+                        </h3>
+                        <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-lg">
+                            <div class="flex flex-wrap gap-2">
+                                ${skillsHtml || '<span class="text-gray-500 italic">No skills found</span>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (step === 'experience') {
+            const experiences = data.experience || [];
+            const expHtml = experiences.map((exp, index) => `
+                <div class="bg-white border border-gray-200 rounded-lg p-4 mb-3 transform transition-all duration-500 hover:shadow-lg hover:scale-102 animate-slideInLeft" style="animation-delay: ${index * 0.2}s">
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center text-white">
+                                <i class="fas fa-building text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-900 text-lg">${exp.position}</h4>
+                            <div class="flex items-center text-blue-600 text-sm mb-2">
+                                <i class="fas fa-building mr-1"></i>
+                                <span class="font-medium">${exp.company}</span>
+                                <span class="mx-2">•</span>
+                                <i class="fas fa-calendar mr-1"></i>
+                                <span>${exp.dates}</span>
+                            </div>
+                            <p class="text-gray-700 leading-relaxed">${exp.description}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            section.innerHTML = `
+                <div class="flex items-start space-x-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center text-white shadow-lg">
+                            <i class="fas fa-briefcase text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-gray-900 mb-3 flex items-center">
+                            <span class="text-lg">Work Experience</span>
+                            <div class="ml-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                            <span class="ml-2 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">${experiences.length} positions</span>
+                        </h3>
+                        <div class="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg">
+                            ${expHtml || '<span class="text-gray-500 italic">No work experience found</span>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (step === 'education') {
+            const education = data.education || [];
+            const eduHtml = education.map((edu, index) => `
+                <div class="bg-white border border-gray-200 rounded-lg p-4 mb-3 transform transition-all duration-500 hover:shadow-lg animate-slideInRight" style="animation-delay: ${index * 0.15}s">
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-lg flex items-center justify-center text-white">
+                                <i class="fas fa-university text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-900 text-lg">${edu.degree}</h4>
+                            <div class="flex items-center text-blue-600 text-sm">
+                                <i class="fas fa-university mr-1"></i>
+                                <span class="font-medium">${edu.institution}</span>
+                                <span class="mx-2">•</span>
+                                <i class="fas fa-calendar mr-1"></i>
+                                <span>${edu.dates}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            section.innerHTML = `
+                <div class="flex items-start space-x-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-full flex items-center justify-center text-white shadow-lg">
+                            <i class="fas fa-graduation-cap text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-gray-900 mb-3 flex items-center">
+                            <span class="text-lg">Education</span>
+                            <div class="ml-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                            <span class="ml-2 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">${education.length} degrees</span>
+                        </h3>
+                        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg">
+                            ${eduHtml || '<span class="text-gray-500 italic">No education found</span>'}
+                        </div>
+                    </div>
+                </div>
+            `;
+        } else if (step === 'projects_certs') {
+            const projects = data.projects || [];
+            const certifications = data.certifications || [];
+            
+            const projectsHtml = projects.map((proj, index) => `
+                <div class="bg-white border border-gray-200 rounded-lg p-4 mb-3 transform transition-all duration-500 hover:shadow-lg animate-fadeInUp" style="animation-delay: ${index * 0.1}s">
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-gradient-to-br from-orange-400 to-red-500 rounded-lg flex items-center justify-center text-white">
+                                <i class="fas fa-code text-xs"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-bold text-gray-900">${proj.name}</h4>
+                            <p class="text-gray-700 text-sm mt-1">${proj.description}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            const certsHtml = certifications.map((cert, index) => 
+                `<span class="bg-gradient-to-r from-yellow-100 to-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full border border-orange-200 transform transition-all duration-300 hover:scale-105 animate-fadeIn" style="animation-delay: ${(projects.length + index) * 0.1}s">${cert}</span>`
+            ).join(' ');
+            
+            section.innerHTML = `
+                <div class="flex items-start space-x-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-16 h-16 bg-gradient-to-br from-orange-400 to-red-600 rounded-full flex items-center justify-center text-white shadow-lg">
+                            <i class="fas fa-project-diagram text-2xl"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="font-semibold text-gray-900 mb-3 flex items-center">
+                            <span class="text-lg">Projects & Certifications</span>
+                            <div class="ml-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        </h3>
+                        
+                        <div class="bg-gradient-to-r from-orange-50 to-red-50 p-4 rounded-lg mb-4">
+                            <h4 class="font-semibold mb-3 flex items-center">
+                                <i class="fas fa-code text-orange-600 mr-2"></i>
+                                Projects 
+                                <span class="ml-2 bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full">${projects.length}</span>
+                            </h4>
+                            ${projectsHtml || '<span class="text-gray-500 italic">No projects found</span>'}
+                        </div>
+                        
+                        <div class="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-lg">
+                            <h4 class="font-semibold mb-3 flex items-center">
+                                <i class="fas fa-certificate text-yellow-600 mr-2"></i>
+                                Certifications
+                                <span class="ml-2 bg-yellow-100 text-yellow-700 text-xs px-2 py-1 rounded-full">${certifications.length}</span>
+                            </h4>
+                            <div class="flex flex-wrap gap-2">
+                                ${certsHtml || '<span class="text-gray-500 italic">No certifications found</span>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Animate section in and scroll to it
+        setTimeout(() => {
+            section.classList.remove('opacity-0', 'transform', 'translate-y-4');
+            section.classList.add('transition-all', 'duration-500');
+            
+            // Scroll to the new section
+            setTimeout(() => {
+                section.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+            }, 200);
+        }, 100);
+    }
+    
+    function updateLiveResultsPartial(step, partialData) {
+        if (!partialData) return;
+        
+        const container = document.getElementById('results-content');
+        
+        // Clear initial placeholder
+        if (container.querySelector('.text-center')) {
+            container.innerHTML = '';
+        }
+        
+        // Get or create section for this step
+        let section = document.getElementById(`result-${step}`);
+        if (!section) {
+            section = document.createElement('div');
+            section.id = `result-${step}`;
+            section.className = 'border border-gray-200 rounded-lg p-4 mb-4';
+            container.appendChild(section);
+        }
+        
+        // Update section with partial data
+        if (step === 'basic_info') {
+            if (!section.innerHTML) {
+                section.innerHTML = `
+                    <h3 class="font-semibold text-gray-900 mb-2 flex items-center">
+                        <i class="fas fa-user text-blue-600 mr-2"></i>
+                        Basic Information
+                    </h3>
+                    <div class="space-y-2" id="basic-info-content">
+                    </div>
+                `;
+            }
+            
+            const content = section.querySelector('#basic-info-content');
+            
+            if (partialData.name) {
+                let nameEl = content.querySelector('#name-display');
+                if (!nameEl) {
+                    nameEl = document.createElement('p');
+                    nameEl.id = 'name-display';
+                    content.appendChild(nameEl);
+                }
+                nameEl.innerHTML = `<strong>Name:</strong> ${partialData.name}`;
+                nameEl.classList.add('animate-pulse');
+                setTimeout(() => nameEl.classList.remove('animate-pulse'), 1000);
+            }
+            
+            if (partialData.email) {
+                let emailEl = content.querySelector('#email-display');
+                if (!emailEl) {
+                    emailEl = document.createElement('p');
+                    emailEl.id = 'email-display';
+                    content.appendChild(emailEl);
+                }
+                emailEl.innerHTML = `<strong>Email:</strong> ${partialData.email}`;
+                emailEl.classList.add('animate-pulse');
+                setTimeout(() => emailEl.classList.remove('animate-pulse'), 1000);
+            }
+            
+            if (partialData.phone) {
+                let phoneEl = content.querySelector('#phone-display');
+                if (!phoneEl) {
+                    phoneEl = document.createElement('p');
+                    phoneEl.id = 'phone-display';
+                    content.appendChild(phoneEl);
+                }
+                phoneEl.innerHTML = `<strong>Phone:</strong> ${partialData.phone}`;
+                phoneEl.classList.add('animate-pulse');
+                setTimeout(() => phoneEl.classList.remove('animate-pulse'), 1000);
+            }
+            
+            if (partialData.summary) {
+                let summaryEl = content.querySelector('#summary-display');
+                if (!summaryEl) {
+                    summaryEl = document.createElement('p');
+                    summaryEl.id = 'summary-display';
+                    content.appendChild(summaryEl);
+                }
+                summaryEl.innerHTML = `<strong>Summary:</strong> ${partialData.summary}`;
+                summaryEl.classList.add('animate-pulse');
+                setTimeout(() => summaryEl.classList.remove('animate-pulse'), 1000);
+            }
+        }
+        
+        else if (step === 'skills') {
+            if (!section.innerHTML) {
+                section.innerHTML = `
+                    <h3 class="font-semibold text-gray-900 mb-2 flex items-center">
+                        <i class="fas fa-tools text-purple-600 mr-2"></i>
+                        Skills
+                    </h3>
+                    <div class="flex flex-wrap gap-2" id="skills-content">
+                    </div>
+                `;
+            }
+            
+            const skillsContent = section.querySelector('#skills-content');
+            
+            if (partialData.languages) {
+                partialData.languages.forEach(skill => {
+                    const skillTag = document.createElement('span');
+                    skillTag.className = 'bg-blue-100 text-blue-800 text-sm font-medium px-2 py-1 rounded opacity-0 transform scale-75';
+                    skillTag.textContent = skill;
+                    skillsContent.appendChild(skillTag);
+                    
+                    // Animate in
+                    setTimeout(() => {
+                        skillTag.classList.remove('opacity-0', 'transform', 'scale-75');
+                        skillTag.classList.add('transition-all', 'duration-300');
+                    }, 100);
+                });
+            }
+            
+            if (partialData.frameworks) {
+                partialData.frameworks.forEach(skill => {
+                    const skillTag = document.createElement('span');
+                    skillTag.className = 'bg-purple-100 text-purple-800 text-sm font-medium px-2 py-1 rounded opacity-0 transform scale-75';
+                    skillTag.textContent = skill;
+                    skillsContent.appendChild(skillTag);
+                    
+                    // Animate in
+                    setTimeout(() => {
+                        skillTag.classList.remove('opacity-0', 'transform', 'scale-75');
+                        skillTag.classList.add('transition-all', 'duration-300');
+                    }, 200);
+                });
+            }
+        }
+        
+        else if (step === 'experience' && partialData.current_job) {
+            if (!section.innerHTML) {
+                section.innerHTML = `
+                    <h3 class="font-semibold text-gray-900 mb-2 flex items-center">
+                        <i class="fas fa-briefcase text-green-600 mr-2"></i>
+                        Work Experience
+                    </h3>
+                    <div id="experience-content">
+                    </div>
+                `;
+            }
+            
+            const expContent = section.querySelector('#experience-content');
+            const job = partialData.current_job;
+            
+            const jobDiv = document.createElement('div');
+            jobDiv.className = 'border-l-4 border-green-500 pl-4 mb-3 opacity-0 transform translate-x-4';
+            jobDiv.innerHTML = `
+                <h4 class="font-medium">${job.position}</h4>
+                <p class="text-blue-600 text-sm">${job.company} | ${job.dates}</p>
+                <p class="text-gray-700 text-sm mt-1">${job.description}</p>
+            `;
+            
+            expContent.appendChild(jobDiv);
+            
+            // Animate in
+            setTimeout(() => {
+                jobDiv.classList.remove('opacity-0', 'transform', 'translate-x-4');
+                jobDiv.classList.add('transition-all', 'duration-500');
+            }, 100);
+        }
+    }
+    
+    // Handle SSE events
+    eventSource.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        
+        // Debug logging
+        console.log('SSE Event:', data);
+        
+        // Add preview sections when steps start
+        if (data.status === 'starting') {
+            const previewTexts = {
+                'basic_info': '🔍 Extracting candidate identity and contact information...',
+                'skills': '🛠️ Discovering technical skills and expertise...',
+                'experience': '💼 Mapping professional journey and achievements...',
+                'education': '🎓 Analyzing academic background and qualifications...',
+                'projects_certs': '🚀 Finding passion projects and certifications...',
+                'finalize': '✨ Compiling complete candidate profile...'
+            };
+            
+            if (previewTexts[data.step]) {
+                addPreviewSection(data.step, previewTexts[data.step]);
+            }
+        }
+        
+        addLogEntry(`${stepNames[data.step] || data.step}: ${data.status}`, 
+                   data.status === 'error' ? 'error' : 
+                   data.status === 'completed' ? 'success' : 'processing');
+        
+        if (data.message) {
+            addLogEntry(data.message, 'info');
+        }
+        
+        updateStepStatus(data.step, data.status, data.data);
+        
+        // Handle partial data updates (micro-progress)
+        if (data.data && data.data.partial_data) {
+            console.log('Partial data update:', data.step, data.data.partial_data);
+            updateLiveResultsPartial(data.step, data.data.partial_data);
+        }
+        
+        if (data.data && data.status === 'completed') {
+            console.log('Updating live results for:', data.step, data.data);
+            updateLiveResults(data.step, data.data);
+            
+            // If finalization is complete, store final data and show button
+            if (data.step === 'finalize' && data.data.candidate_data) {
+                finalCandidateData = data.data.candidate_data;
+                const finalSection = document.getElementById('final-results-section');
+                finalSection.classList.remove('hidden');
+                addLogEntry('Parsing completed successfully!', 'success');
+                
+                // Scroll to final results button
+                setTimeout(() => {
+                    finalSection.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'center' 
+                    });
+                }, 500);
+            }
+        } else if (data.status === 'completed') {
+            console.log('Step completed but no data:', data.step);
+        }
+        
+        if (data.error) {
+            addLogEntry(`Error: ${data.error}`, 'error');
+        }
+    };
+    
+    eventSource.onerror = function(event) {
+        addLogEntry('Connection error occurred', 'error');
+        eventSource.close();
+    };
+    
+    // Handle activity log toggle
+    document.getElementById('toggle-activity-log').addEventListener('click', function() {
+        const container = document.getElementById('activity-log-container');
+        const icon = document.getElementById('toggle-icon');
+        const text = document.getElementById('toggle-text');
+        
+        if (container.classList.contains('hidden')) {
+            // Show log
+            container.classList.remove('hidden');
+            icon.classList.add('rotate-180');
+            text.textContent = 'Hide Details';
+        } else {
+            // Hide log
+            container.classList.add('hidden');
+            icon.classList.remove('rotate-180');
+            text.textContent = 'Show Details';
+        }
+    });
+    
+    // Handle final results button
+    document.getElementById('view-final-results').addEventListener('click', function() {
+        if (finalCandidateData) {
+            // Create a form to submit the final data to the results page
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{{ url_for("show_final_results") }}';
+            
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'candidate_data';
+            input.value = JSON.stringify(finalCandidateData);
+            
+            const filenameInput = document.createElement('input');
+            filenameInput.type = 'hidden';
+            filenameInput.name = 'filename';
+            filenameInput.value = '{{ filename }}';
+            
+            form.appendChild(input);
+            form.appendChild(filenameInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+});
+</script>
+
+<style>
+/* Custom animations for visual appeal */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.6s ease-out forwards;
+}
+
+.animate-fadeInUp {
+    animation: fadeInUp 0.8s ease-out forwards;
+}
+
+.animate-slideInLeft {
+    animation: slideInLeft 0.7s ease-out forwards;
+}
+
+.animate-slideInRight {
+    animation: slideInRight 0.7s ease-out forwards;
+}
+
+.animate-scaleIn {
+    animation: scaleIn 0.5s ease-out forwards;
+}
+
+.hover\:scale-102:hover {
+    transform: scale(1.02);
+}
+
+/* Gradient text effect */
+.gradient-text {
+    background: linear-gradient(45deg, #3b82f6, #8b5cf6, #ef4444);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Pulsing effect for live indicators */
+.pulse-glow {
+    animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
+    50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8), 0 0 30px rgba(59, 130, 246, 0.4); }
+}
+
+/* Loading shimmer effect */
+.shimmer {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+</style>
+{% endblock %}

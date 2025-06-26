@@ -26,7 +26,8 @@
                     </label>
                     <input type="file" id="file-input" name="file" class="hidden" accept=".txt,.pdf,.doc,.docx">
                     <p class="text-sm text-gray-400 mt-4">
-                        Supported formats: TXT, PDF, DOC, DOCX (Max 16MB)
+                        Supported formats: TXT, PDF, DOC, DOCX (Max 16MB)<br>
+                        <span class="text-green-600">✨ PDFs are directly analyzed by Claude AI!</span>
                     </p>
                 </div>
             </div>
@@ -47,17 +48,31 @@
                 </div>
             </div>
 
-            <!-- Submit Button -->
-            <button type="submit" id="submit-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                <span id="submit-text">
-                    <i class="fas fa-magic mr-2"></i>
-                    Parse CV with AI
-                </span>
-                <span id="loading-text" class="hidden">
-                    <i class="fas fa-spinner fa-spin mr-2"></i>
-                    Processing with Claude...
-                </span>
-            </button>
+            <!-- Submit Buttons -->
+            <div class="grid md:grid-cols-2 gap-4">
+                <button type="button" id="progressive-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <span>
+                        <i class="fas fa-chart-line mr-2"></i>
+                        Progressive Parse (Recommended)
+                    </span>
+                </button>
+                
+                <button type="submit" id="submit-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    <span id="submit-text">
+                        <i class="fas fa-magic mr-2"></i>
+                        Quick Parse
+                    </span>
+                    <span id="loading-text" class="hidden">
+                        <i class="fas fa-spinner fa-spin mr-2"></i>
+                        Processing with Claude...
+                    </span>
+                </button>
+            </div>
+            
+            <p class="text-sm text-gray-500 text-center mt-2">
+                <strong>Progressive Parse:</strong> See live progress and logs<br>
+                <strong>Quick Parse:</strong> One-step processing (slower but complete)
+            </p>
         </form>
     </div>
 
@@ -126,7 +141,16 @@ removeFileBtn.addEventListener('click', function() {
     clearFile();
 });
 
-// Form submission
+// Progressive parse button
+document.getElementById('progressive-btn').addEventListener('click', function() {
+    if (fileInput.files.length > 0) {
+        // Change form action to progressive endpoint
+        form.action = "{{ url_for('upload_progressive') }}";
+        form.submit();
+    }
+});
+
+// Form submission (quick parse)
 form.addEventListener('submit', function(e) {
     showLoading();
 });
@@ -163,12 +187,14 @@ function showFileInfo(file) {
     fileSize.textContent = formatFileSize(file.size);
     fileInfo.classList.remove('hidden');
     submitBtn.disabled = false;
+    document.getElementById('progressive-btn').disabled = false;
 }
 
 function clearFile() {
     fileInput.value = '';
     fileInfo.classList.add('hidden');
     submitBtn.disabled = true;
+    document.getElementById('progressive-btn').disabled = true;
 }
 
 function formatFileSize(bytes) {

@@ -8,3 +8,56 @@ wheels/
 
 # Virtual environments
 .venv
+venv/
+env/
+
+# CV uploads and parsed files (sensitive data)
+uploads/
+parsed/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Environment variables and secrets
+.env
+.env.local
+.env.production
+config.ini
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Claude CLI cache (if any)
+.claude/
+
+# Experimental and temporary files
+*_cv_parser.py
+test_*.py
+candidate_info.json
+cv_skills.json
+education_info.json
+parsed_cv.json
+extracted_*.json
+hello.txt
+sample_cv.txt
+*.pdf
+README_CV_PARSER.md
+requirements.txt

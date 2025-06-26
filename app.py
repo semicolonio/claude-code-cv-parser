@@ -4,10 +4,14 @@
 import json
 import os
 import subprocess
+import time
 from pathlib import Path
 from werkzeug.utils import secure_filename
 
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+import PyPDF2
+import docx
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, Response, session
+from progressive_parser import ProgressiveCVParser
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-change-in-production'
@@ -31,65 +35,93 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
+def extract_text_from_file(file_path):
+    """Extract text content from different file formats."""
+    file_path = Path(file_path)
+    suffix = file_path.suffix.lower()
+    
+    try:
+        if suffix == '.txt':
+            return file_path.read_text(encoding='utf-8')
+        
+        elif suffix == '.pdf':
+            text = ""
+            with open(file_path, 'rb') as file:
+                pdf_reader = PyPDF2.PdfReader(file)
+                for page in pdf_reader.pages:
+                    text += page.extract_text() + "\n"
+            return text
+        
+        elif suffix in ['.docx', '.doc']:
+            doc = docx.Document(file_path)
+            text = ""
+            for paragraph in doc.paragraphs:
+                text += paragraph.text + "\n"
+            return text
+        
+        else:
+            return f"Unsupported file format: {suffix}"
+            
+    except Exception as e:
+        return f"Error reading file: {str(e)}"
+
+
 def parse_cv_with_claude(cv_file_path):
-    """Parse CV using Claude CLI - adapted from final_working_parser.py."""
+    """Parse CV using Claude CLI with text extraction."""
     
     cv_path = Path(cv_file_path)
     if not cv_path.exists():
         return None, f"File not found: {cv_file_path}"
     
-    # For now, only support TXT files in the web app
-    if cv_path.suffix.lower() != '.txt':
-        return None, "Only .txt files are currently supported"
+    # Extract text from file first
+    cv_text = extract_text_from_file(cv_path)
     
-    cv_content = cv_path.read_text(encoding='utf-8')
+    if cv_text.startswith("Error") or cv_text.startswith("Unsupported"):
+        return None, cv_text
     
-    # Create parsing prompt
-    prompt = f"""Extract candidate information from this CV in JSON format:
+    # Create parsing prompt with extracted text - using regular string to avoid f-string conflicts
+    prompt = """Extract candidate information from this CV text and return ONLY a JSON object. Do not include any other text, explanations, or comments.
 
-{cv_content}
+CV TEXT:
+""" + cv_text + """
 
-Return a JSON object with these fields:
-- name: candidate full name
-- email: email address  
-- phone: phone number
-- summary: brief professional summary
-- skills: array of technical skills
-- experience: array of work experience (company, position, dates, description)
-- education: array of education (institution, degree, dates)
-- projects: array of notable projects
-- certifications: array of certifications
-
-Example format:
-{{
-  "name": "John Smith",
-  "email": "john@example.com", 
-  "phone": "(555) 123-4567",
-  "summary": "Experienced software engineer...",
-  "skills": ["Python", "JavaScript", "AWS"],
+Return ONLY a JSON object with these fields (no other text):
+{
+  "name": "candidate full name",
+  "email": "email address",  
+  "phone": "phone number",
+  "summary": "brief professional summary",
+  "skills": ["skill1", "skill2", "skill3"],
   "experience": [
-    {{
-      "company": "TechCorp",
-      "position": "Senior Engineer",
-      "dates": "2021-Present", 
-      "description": "Led development of..."
-    }}
+    {
+      "company": "Company Name",
+      "position": "Job Title",
+      "dates": "Date Range", 
+      "description": "Job description"
+    }
   ],
   "education": [
-    {{
-      "institution": "University",
-      "degree": "BS Computer Science",
-      "dates": "2014-2018"
-    }}
+    {
+      "institution": "University Name",
+      "degree": "Degree Name",
+      "dates": "Date Range"
+    }
   ],
-  "projects": [],
-  "certifications": []
-}}"""
+  "projects": [
+    {
+      "name": "Project Name",
+      "description": "Project description"
+    }
+  ],
+  "certifications": ["Certification Name"]
+}
+
+IMPORTANT: Return ONLY the JSON object, no other text whatsoever."""
 
     try:
-        # Use Claude CLI with skip permissions for automation
+        # Use Claude CLI with text input (not file upload)
         result = subprocess.run(
-            ["claude", "-p", "--dangerously-skip-permissions"],
+            ["claude", "-p", "--dangerously-skip-permissions", "--model", "sonnet"],
             input=prompt,
             capture_output=True,
             text=True,
@@ -99,23 +131,72 @@ Example format:
         if result.returncode == 0:
             response = result.stdout.strip()
             
+            # Debug: Save the raw response to check what Claude returned
+            debug_file = PARSED_FOLDER / f"{cv_path.stem}_debug_response.txt"
+            with open(debug_file, 'w') as f:
+                f.write(f"STDOUT:\n{response}\n\nSTDERR:\n{result.stderr}")
+            
+            # Check if Claude created a JSON file (it sometimes does this)
+            possible_files = [
+                Path("parsed_cv.json"),
+                Path(f"{cv_path.stem}.json"),
+                PARSED_FOLDER / f"{cv_path.stem}.json"
+            ]
+            
+            for json_file_path in possible_files:
+                if json_file_path.exists():
+                    try:
+                        with open(json_file_path, 'r') as f:
+                            candidate_data = json.load(f)
+                        
+                        # Save to our expected location
+                        final_json_file = PARSED_FOLDER / f"{cv_path.stem}_structured.json"
+                        with open(final_json_file, 'w') as f:
+                            json.dump(candidate_data, f, indent=2)
+                        
+                        return candidate_data, None
+                    except json.JSONDecodeError:
+                        continue
+            
             if response and not response.startswith("Execution error"):
-                # Extract JSON from response
-                start = response.find('{')
-                end = response.rfind('}') + 1
+                # Look for JSON in the response - try multiple patterns
+                json_patterns = [
+                    (response.find('{'), response.rfind('}') + 1),  # Standard JSON
+                    (response.find('```json') + 7, response.find('```', response.find('```json') + 7)),  # Markdown JSON
+                ]
                 
-                if start >= 0 and end > start:
-                    json_str = response[start:end]
-                    candidate_data = json.loads(json_str)
-                    
-                    # Save structured data
-                    json_file = PARSED_FOLDER / f"{cv_path.stem}_structured.json"
-                    with open(json_file, 'w') as f:
-                        json.dump(candidate_data, f, indent=2)
-                    
-                    return candidate_data, None
-                else:
-                    return None, "No valid JSON found in Claude response"
+                for start, end in json_patterns:
+                    if start >= 0 and end > start and start < len(response):
+                        try:
+                            json_str = response[start:end].strip()
+                            if json_str.startswith('```'):
+                                json_str = json_str[3:].strip()
+                            if json_str.endswith('```'):
+                                json_str = json_str[:-3].strip()
+                            
+                            candidate_data = json.loads(json_str)
+                            
+                            # Save structured data
+                            json_file = PARSED_FOLDER / f"{cv_path.stem}_structured.json"
+                            with open(json_file, 'w') as f:
+                                json.dump(candidate_data, f, indent=2)
+                            
+                            return candidate_data, None
+                        except json.JSONDecodeError:
+                            continue
+                
+                # If no JSON found, check if there's already a good file and use it
+                existing_file = Path("parsed_cv.json")
+                if existing_file.exists():
+                    try:
+                        with open(existing_file, 'r') as f:
+                            candidate_data = json.load(f)
+                        return candidate_data, None
+                    except:
+                        pass
+                
+                # If no JSON found, return the raw response for debugging
+                return None, f"No valid JSON found. Raw response saved to {debug_file}. Response preview: {response[:200]}..."
             else:
                 return None, f"Claude error: {response}"
         else:
@@ -175,6 +256,83 @@ def upload_file():
         return redirect(url_for('index'))
 
 
+@app.route('/upload_progressive', methods=['POST'])
+def upload_progressive():
+    """Handle file upload and redirect to progressive parsing."""
+    
+    if 'file' not in request.files:
+        flash('No file selected')
+        return redirect(url_for('index'))
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        flash('No file selected')
+        return redirect(url_for('index'))
+    
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        
+        # Save uploaded file
+        file_path = app.config['UPLOAD_FOLDER'] / filename
+        file.save(file_path)
+        
+        # Store filename in session for the progressive parsing
+        session['parsing_file'] = filename
+        
+        return render_template('progressive.html', filename=filename)
+    
+    else:
+        flash('Invalid file type. Please upload TXT, PDF, DOC, or DOCX files.')
+        return redirect(url_for('index'))
+
+
+@app.route('/parse_progressive')
+def parse_progressive():
+    """SSE endpoint for progressive CV parsing."""
+    
+    filename = session.get('parsing_file')
+    if not filename:
+        return Response("No file to parse", status=400)
+    
+    file_path = app.config['UPLOAD_FOLDER'] / filename
+    if not file_path.exists():
+        return Response("File not found", status=404)
+    
+    # Extract text from file
+    cv_text = extract_text_from_file(file_path)
+    if cv_text.startswith("Error") or cv_text.startswith("Unsupported"):
+        return Response(f"Error reading file: {cv_text}", status=400)
+    
+    def generate_progress():
+        """Generate SSE progress events with progressive parser."""
+        parser = ProgressiveCVParser(cv_text, filename)
+        
+        try:
+            for progress_event in parser.parse_progressive():
+                # Format as SSE
+                yield f"data: {json.dumps(progress_event)}\n\n"
+                
+        except Exception as e:
+            error_event = {
+                'step': 'error',
+                'status': 'error',
+                'error': str(e),
+                'timestamp': time.time()
+            }
+            yield f"data: {json.dumps(error_event)}\n\n"
+    
+    return Response(
+        generate_progress(),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*'
+        }
+    )
+
+
 @app.route('/api/upload', methods=['POST'])
 def api_upload():
     """API endpoint for file upload (for AJAX requests)."""
@@ -208,6 +366,24 @@ def api_upload():
         })
     else:
         return jsonify({'error': 'Failed to parse CV'}), 500
+
+
+@app.route('/show_final_results', methods=['POST'])
+def show_final_results():
+    """Show final results from progressive parsing."""
+    candidate_data_json = request.form.get('candidate_data')
+    filename = request.form.get('filename')
+    
+    if not candidate_data_json:
+        flash('No candidate data received')
+        return redirect(url_for('index'))
+    
+    try:
+        candidate_data = json.loads(candidate_data_json)
+        return render_template('results.html', candidate=candidate_data, filename=filename)
+    except json.JSONDecodeError:
+        flash('Invalid candidate data format')
+        return redirect(url_for('index'))
 
 
 if __name__ == '__main__':
