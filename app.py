@@ -2,68 +2,28 @@
 """Flask web application for CV parsing with file upload."""
 
 import json
-import os
 import subprocess
 import time
 from pathlib import Path
 from werkzeug.utils import secure_filename
 
-import PyPDF2
-import docx
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, Response, session
-from progressive_parser import ProgressiveCVParser
+
+# Import from our organized modules
+from src.config.settings import (
+    SECRET_KEY, UPLOAD_FOLDER, PARSED_FOLDER, 
+    MAX_FILE_SIZE, CLAUDE_MODEL, CLAUDE_TIMEOUT
+)
+from src.utils.file_processing import extract_text_from_file, allowed_file
+from src.parsers.progressive import ProgressiveCVParser
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-change-in-production'
+app.secret_key = SECRET_KEY
 
 # Configuration
-UPLOAD_FOLDER = Path('uploads')
-PARSED_FOLDER = Path('parsed')
-ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx', 'doc'}
-MAX_FILE_SIZE = 16 * 1024 * 1024  # 16MB
-
-# Ensure directories exist
-UPLOAD_FOLDER.mkdir(exist_ok=True)
-PARSED_FOLDER.mkdir(exist_ok=True)
-
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE
 
-
-def allowed_file(filename):
-    """Check if file extension is allowed."""
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-def extract_text_from_file(file_path):
-    """Extract text content from different file formats."""
-    file_path = Path(file_path)
-    suffix = file_path.suffix.lower()
-    
-    try:
-        if suffix == '.txt':
-            return file_path.read_text(encoding='utf-8')
-        
-        elif suffix == '.pdf':
-            text = ""
-            with open(file_path, 'rb') as file:
-                pdf_reader = PyPDF2.PdfReader(file)
-                for page in pdf_reader.pages:
-                    text += page.extract_text() + "\n"
-            return text
-        
-        elif suffix in ['.docx', '.doc']:
-            doc = docx.Document(file_path)
-            text = ""
-            for paragraph in doc.paragraphs:
-                text += paragraph.text + "\n"
-            return text
-        
-        else:
-            return f"Unsupported file format: {suffix}"
-            
-    except Exception as e:
-        return f"Error reading file: {str(e)}"
 
 
 def parse_cv_with_claude(cv_file_path):
@@ -121,11 +81,11 @@ IMPORTANT: Return ONLY the JSON object, no other text whatsoever."""
     try:
         # Use Claude CLI with text input (not file upload)
         result = subprocess.run(
-            ["claude", "-p", "--dangerously-skip-permissions", "--model", "sonnet"],
+            ["claude", "-p", "--dangerously-skip-permissions", "--model", CLAUDE_MODEL],
             input=prompt,
             capture_output=True,
             text=True,
-            timeout=120
+            timeout=CLAUDE_TIMEOUT
         )
         
         if result.returncode == 0:

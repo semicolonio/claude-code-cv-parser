@@ -11,9 +11,11 @@ wheels/
 venv/
 env/
 
-# CV uploads and parsed files (sensitive data)
+# CV uploads and parsed files (SENSITIVE DATA - NEVER COMMIT)
 uploads/
 parsed/
+!uploads/.gitkeep
+!parsed/.gitkeep
 
 # IDE and editor files
 .vscode/
@@ -35,29 +37,56 @@ Thumbs.db
 .env
 .env.local
 .env.production
+.env.development
 config.ini
+secrets.json
 
-# Logs
+# Logs and debug files
 *.log
 logs/
+debug/
+*.debug
 
-# Temporary files
+# Temporary and cache files
 *.tmp
 *.temp
+*.cache
+.pytest_cache/
 
-# Claude CLI cache (if any)
+# Claude CLI cache and config
 .claude/
+.anthropic/
 
-# Experimental and temporary files
-*_cv_parser.py
-test_*.py
-candidate_info.json
-cv_skills.json
-education_info.json
-parsed_cv.json
-extracted_*.json
-hello.txt
-sample_cv.txt
+# Real CV files and personal data (CRITICAL - NEVER COMMIT)
 *.pdf
-README_CV_PARSER.md
-requirements.txt
+*.doc
+*.docx
+*resume*
+*cv*
+*CV*
+!examples/sample_cv.txt
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+
+# Node modules (if any)
+node_modules/
+
+# Jupyter notebooks (if any)
+.ipynb_checkpoints/
+
+# macOS specific
+*.DS_Store
