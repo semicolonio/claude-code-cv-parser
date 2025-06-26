@@ -1,0 +1,16 @@
+[project]
+name = "claude-code-sddk"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "claude-code-sdk>=0.0.11",
+    "mcp>=1.0.0",
+    "pydantic[email]>=2.0.0",
+    "PyPDF2>=3.0.0",
+    "python-docx>=1.0.0",
+    "anyio>=4.0.0",
+    "flask>=3.0.0",
+    "werkzeug>=3.0.0",
+]

@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Upload CV - CV Parser{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="text-center mb-8">
+        <h2 class="text-3xl font-bold text-gray-900 mb-4">Upload Your CV</h2>
+        <p class="text-lg text-gray-600">
+            Upload a CV and get an instant AI-powered candidate summary
+        </p>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-8">
+        <!-- File Upload Area -->
+        <form id="upload-form" action="{{ url_for('upload_file') }}" method="post" enctype="multipart/form-data">
+            <div id="drop-area" class="drag-area rounded-lg p-12 text-center mb-6">
+                <div class="upload-content">
+                    <i class="fas fa-cloud-upload-alt text-6xl text-gray-400 mb-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-700 mb-2">
+                        Drag and drop your CV here
+                    </h3>
+                    <p class="text-gray-500 mb-4">or</p>
+                    <label for="file-input" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg cursor-pointer transition duration-200">
+                        Choose File
+                    </label>
+                    <input type="file" id="file-input" name="file" class="hidden" accept=".txt,.pdf,.doc,.docx">
+                    <p class="text-sm text-gray-400 mt-4">
+                        Supported formats: TXT, PDF, DOC, DOCX (Max 16MB)
+                    </p>
+                </div>
+            </div>
+
+            <!-- File Info Display -->
+            <div id="file-info" class="hidden bg-gray-50 rounded-lg p-4 mb-6">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <i class="fas fa-file text-blue-600 mr-3"></i>
+                        <div>
+                            <p id="file-name" class="font-medium text-gray-900"></p>
+                            <p id="file-size" class="text-sm text-gray-500"></p>
+                        </div>
+                    </div>
+                    <button type="button" id="remove-file" class="text-red-600 hover:text-red-800">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" id="submit-btn" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <span id="submit-text">
+                    <i class="fas fa-magic mr-2"></i>
+                    Parse CV with AI
+                </span>
+                <span id="loading-text" class="hidden">
+                    <i class="fas fa-spinner fa-spin mr-2"></i>
+                    Processing with Claude...
+                </span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Features Section -->
+    <div class="mt-12 grid md:grid-cols-3 gap-8">
+        <div class="text-center">
+            <div class="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-brain text-blue-600 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">AI-Powered</h3>
+            <p class="text-gray-600">Advanced Claude AI extracts detailed candidate information</p>
+        </div>
+        
+        <div class="text-center">
+            <div class="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-bolt text-green-600 text-2xl"></i>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-2">Lightning Fast</h3>
+            <p class="text-gray-600">Get structured candidate summaries in seconds</p>
+        </div>
+        
+        <div class="bg-gradient-to-r from-purple-100 to-pink-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <i class="fas fa-shield-alt text-purple-600 text-2xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Secure</h3>
+        <p class="text-gray-600">Your CV data is processed securely and not stored</p>
+    </div>
+</div>
+
+<script>
+// Drag and drop functionality
+const dropArea = document.getElementById('drop-area');
+const fileInput = document.getElementById('file-input');
+const fileInfo = document.getElementById('file-info');
+const fileName = document.getElementById('file-name');
+const fileSize = document.getElementById('file-size');
+const removeFileBtn = document.getElementById('remove-file');
+const submitBtn = document.getElementById('submit-btn');
+const form = document.getElementById('upload-form');
+
+// Prevent default drag behaviors
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropArea.addEventListener(eventName, preventDefaults, false);
+    document.body.addEventListener(eventName, preventDefaults, false);
+});
+
+// Highlight drop area when item is dragged over it
+['dragenter', 'dragover'].forEach(eventName => {
+    dropArea.addEventListener(eventName, highlight, false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+    dropArea.addEventListener(eventName, unhighlight, false);
+});
+
+// Handle dropped files
+dropArea.addEventListener('drop', handleDrop, false);
+
+// Handle file input change
+fileInput.addEventListener('change', function() {
+    handleFiles(this.files);
+});
+
+// Remove file button
+removeFileBtn.addEventListener('click', function() {
+    clearFile();
+});
+
+// Form submission
+form.addEventListener('submit', function(e) {
+    showLoading();
+});
+
+function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+}
+
+function highlight() {
+    dropArea.classList.add('drag-over');
+}
+
+function unhighlight() {
+    dropArea.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    handleFiles(files);
+}
+
+function handleFiles(files) {
+    if (files.length > 0) {
+        const file = files[0];
+        fileInput.files = files;
+        showFileInfo(file);
+    }
+}
+
+function showFileInfo(file) {
+    fileName.textContent = file.name;
+    fileSize.textContent = formatFileSize(file.size);
+    fileInfo.classList.remove('hidden');
+    submitBtn.disabled = false;
+}
+
+function clearFile() {
+    fileInput.value = '';
+    fileInfo.classList.add('hidden');
+    submitBtn.disabled = true;
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function showLoading() {
+    document.getElementById('submit-text').classList.add('hidden');
+    document.getElementById('loading-text').classList.remove('hidden');
+    submitBtn.disabled = true;
+}
+</script>
+{% endblock %}

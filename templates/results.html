@@ -1,0 +1,242 @@
+{% extends "base.html" %}
+
+{% block title %}Candidate Summary - {{ candidate.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <!-- Header -->
+    <div class="mb-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-900">{{ candidate.name }}</h1>
+                <p class="text-lg text-gray-600 mt-2">Candidate Summary</p>
+            </div>
+            <div class="flex space-x-4">
+                <a href="{{ url_for('index') }}" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200">
+                    <i class="fas fa-plus mr-2"></i>Parse Another CV
+                </a>
+                <button onclick="window.print()" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200">
+                    <i class="fas fa-print mr-2"></i>Print
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-8">
+        <!-- Left Column - Contact & Summary -->
+        <div class="lg:col-span-1 space-y-6">
+            <!-- Contact Information -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-address-card text-blue-600 mr-2"></i>
+                    Contact Information
+                </h2>
+                <div class="space-y-3">
+                    {% if candidate.email %}
+                    <div class="flex items-center">
+                        <i class="fas fa-envelope text-gray-400 w-5 mr-3"></i>
+                        <a href="mailto:{{ candidate.email }}" class="text-blue-600 hover:text-blue-800">{{ candidate.email }}</a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if candidate.phone %}
+                    <div class="flex items-center">
+                        <i class="fas fa-phone text-gray-400 w-5 mr-3"></i>
+                        <a href="tel:{{ candidate.phone }}" class="text-blue-600 hover:text-blue-800">{{ candidate.phone }}</a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if candidate.linkedin %}
+                    <div class="flex items-center">
+                        <i class="fab fa-linkedin text-gray-400 w-5 mr-3"></i>
+                        <a href="{{ candidate.linkedin if candidate.linkedin.startswith('http') else 'https://' + candidate.linkedin }}" target="_blank" class="text-blue-600 hover:text-blue-800">LinkedIn</a>
+                    </div>
+                    {% endif %}
+                    
+                    {% if candidate.github %}
+                    <div class="flex items-center">
+                        <i class="fab fa-github text-gray-400 w-5 mr-3"></i>
+                        <a href="{{ candidate.github if candidate.github.startswith('http') else 'https://' + candidate.github }}" target="_blank" class="text-blue-600 hover:text-blue-800">GitHub</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-chart-bar text-green-600 mr-2"></i>
+                    Quick Stats
+                </h2>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="text-center p-3 bg-blue-50 rounded-lg">
+                        <div class="text-2xl font-bold text-blue-600">{{ candidate.skills|length }}</div>
+                        <div class="text-sm text-gray-600">Skills</div>
+                    </div>
+                    <div class="text-center p-3 bg-green-50 rounded-lg">
+                        <div class="text-2xl font-bold text-green-600">{{ candidate.experience|length }}</div>
+                        <div class="text-sm text-gray-600">Experience</div>
+                    </div>
+                    <div class="text-center p-3 bg-purple-50 rounded-lg">
+                        <div class="text-2xl font-bold text-purple-600">{{ candidate.education|length }}</div>
+                        <div class="text-sm text-gray-600">Education</div>
+                    </div>
+                    <div class="text-center p-3 bg-orange-50 rounded-lg">
+                        <div class="text-2xl font-bold text-orange-600">{{ candidate.projects|length }}</div>
+                        <div class="text-sm text-gray-600">Projects</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Skills -->
+            {% if candidate.skills %}
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-tools text-purple-600 mr-2"></i>
+                    Skills
+                </h2>
+                <div class="flex flex-wrap gap-2">
+                    {% for skill in candidate.skills %}
+                    <span class="bg-blue-100 text-blue-800 text-sm font-medium px-3 py-1 rounded-full">{{ skill }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column - Experience & Education -->
+        <div class="lg:col-span-2 space-y-6">
+            <!-- Professional Summary -->
+            {% if candidate.summary %}
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+                    <i class="fas fa-user text-indigo-600 mr-2"></i>
+                    Professional Summary
+                </h2>
+                <p class="text-gray-700 leading-relaxed">{{ candidate.summary }}</p>
+            </div>
+            {% endif %}
+
+            <!-- Work Experience -->
+            {% if candidate.experience %}
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                    <i class="fas fa-briefcase text-green-600 mr-2"></i>
+                    Work Experience
+                </h2>
+                <div class="space-y-6">
+                    {% for exp in candidate.experience %}
+                    <div class="border-l-4 border-green-500 pl-6">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">{{ exp.position }}</h3>
+                                <p class="text-blue-600 font-medium">{{ exp.company }}</p>
+                            </div>
+                            <span class="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full">{{ exp.dates }}</span>
+                        </div>
+                        {% if exp.description %}
+                        <p class="text-gray-700 mt-2">{{ exp.description }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Education -->
+            {% if candidate.education %}
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                    <i class="fas fa-graduation-cap text-blue-600 mr-2"></i>
+                    Education
+                </h2>
+                <div class="space-y-4">
+                    {% for edu in candidate.education %}
+                    <div class="border-l-4 border-blue-500 pl-6">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="text-lg font-semibold text-gray-900">{{ edu.degree }}</h3>
+                                <p class="text-blue-600 font-medium">{{ edu.institution }}</p>
+                            </div>
+                            <span class="bg-gray-100 text-gray-800 text-sm font-medium px-3 py-1 rounded-full">{{ edu.dates }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Projects -->
+            {% if candidate.projects %}
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                    <i class="fas fa-project-diagram text-orange-600 mr-2"></i>
+                    Notable Projects
+                </h2>
+                <div class="grid md:grid-cols-2 gap-6">
+                    {% for project in candidate.projects %}
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-lg font-semibold text-gray-900">{{ project.name }}</h3>
+                            {% if project.year %}
+                            <span class="bg-orange-100 text-orange-800 text-sm font-medium px-2 py-1 rounded">{{ project.year }}</span>
+                            {% endif %}
+                        </div>
+                        {% if project.description %}
+                        <p class="text-gray-700 text-sm mb-3">{{ project.description }}</p>
+                        {% endif %}
+                        {% if project.technologies %}
+                        <p class="text-blue-600 text-sm font-medium">{{ project.technologies }}</p>
+                        {% endif %}
+                        {% if project.github %}
+                        <a href="{{ project.github if project.github.startswith('http') else 'https://' + project.github }}" target="_blank" class="text-blue-600 hover:text-blue-800 text-sm">
+                            <i class="fab fa-github mr-1"></i>View Code
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Certifications -->
+            {% if candidate.certifications %}
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                    <i class="fas fa-certificate text-yellow-600 mr-2"></i>
+                    Certifications
+                </h2>
+                <div class="grid md:grid-cols-2 gap-4">
+                    {% for cert in candidate.certifications %}
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h3 class="font-semibold text-gray-900">{{ cert.name }}</h3>
+                        {% if cert.year %}
+                        <p class="text-gray-600 text-sm">{{ cert.year }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Footer Info -->
+    <div class="mt-8 bg-gray-100 rounded-lg p-4 text-center">
+        <p class="text-sm text-gray-600">
+            <i class="fas fa-file-alt mr-2"></i>
+            Parsed from: {{ filename }} | 
+            <i class="fas fa-robot mr-2"></i>
+            Processed with Claude AI
+        </p>
+    </div>
+</div>
+
+<style>
+@media print {
+    .no-print { display: none !important; }
+    body { background: white !important; }
+    .shadow-md { box-shadow: none !important; }
+}
+</style>
+{% endblock %}

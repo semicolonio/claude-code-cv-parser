@@ -1,0 +1,74 @@
+{
+  "name": "John Smith",
+  "email": "john.smith@email.com",
+  "phone": "(555) 123-4567",
+  "summary": "Experienced software engineer with 5+ years of expertise in full-stack development, specializing in Python, JavaScript, and cloud technologies. Proven track record of delivering scalable web applications and leading development teams.",
+  "skills": [
+    "Python",
+    "JavaScript",
+    "TypeScript",
+    "Java",
+    "Go",
+    "Django",
+    "Flask",
+    "React",
+    "Node.js",
+    "Express",
+    "PostgreSQL",
+    "MongoDB",
+    "Redis",
+    "AWS",
+    "Google Cloud",
+    "Docker",
+    "Kubernetes",
+    "Git",
+    "Jenkins",
+    "Terraform",
+    "Linux"
+  ],
+  "experience": [
+    {
+      "company": "TechCorp Inc.",
+      "position": "Senior Software Engineer",
+      "dates": "2021 - Present",
+      "description": "Led development of microservices architecture serving 1M+ users. Improved system performance by 40% through database optimization. Mentored 3 junior developers and conducted code reviews. Implemented CI/CD pipelines reducing deployment time by 60%."
+    },
+    {
+      "company": "StartupXYZ",
+      "position": "Software Engineer",
+      "dates": "2019 - 2021",
+      "description": "Built full-stack web applications using Python Django and React. Developed RESTful APIs and integrated third-party services. Collaborated with product team to define technical requirements. Maintained 99.9% uptime for critical production systems."
+    },
+    {
+      "company": "WebSolutions LLC",
+      "position": "Junior Developer",
+      "dates": "2018 - 2019",
+      "description": "Developed responsive websites using HTML, CSS, JavaScript. Fixed bugs and implemented new features for existing applications. Participated in agile development process and sprint planning."
+    }
+  ],
+  "education": [
+    {
+      "institution": "University of California, Berkeley",
+      "degree": "Bachelor of Science in Computer Science",
+      "dates": "2014 - 2018"
+    }
+  ],
+  "projects": [
+    {
+      "name": "E-commerce Platform",
+      "year": "2022",
+      "description": "Built scalable e-commerce platform using Django and React. Implemented payment processing with Stripe API.",
+      "technologies": "Python, Django, React, PostgreSQL, AWS"
+    },
+    {
+      "name": "Task Management App",
+      "year": "2021",
+      "description": "Developed real-time collaborative task management tool. Features: real-time updates, file attachments, team collaboration.",
+      "technologies": "Node.js, Socket.io, MongoDB, React"
+    }
+  ],
+  "certifications": [
+    "AWS Certified Solutions Architect - Associate (2022)",
+    "Google Cloud Professional Developer (2021)"
+  ]
+}
