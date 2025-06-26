@@ -4,6 +4,19 @@ An intelligent CV parsing system that uses **Claude AI** to extract and structur
 
 ![CV Parser Demo](https://img.shields.io/badge/Demo-Live-brightgreen) ![Python](https://img.shields.io/badge/Python-3.8+-blue) ![Claude AI](https://img.shields.io/badge/Claude-AI-purple) ![License](https://img.shields.io/badge/License-MIT-green)
 
+## 🎬 Demo Video
+
+Watch the CV Parser in action with real-time progressive parsing:
+
+<video width="100%" controls>
+  <source src="docs/media/cv-parser.mp4" type="video/mp4">
+  <p>Your browser doesn't support embedded videos. <a href="docs/media/cv-parser.mp4">Download the demo video</a> to see the CV Parser in action!</p>
+</video>
+
+> **✨ See how the parser extracts candidate information step-by-step with beautiful animations and real-time updates!**
+
+*Note: If the video doesn't play in your browser, you can [download it here](docs/media/cv-parser.mp4) or view it directly in the repository.*
+
 ## ✨ Features
 
 ### 🎯 **Smart Extraction**
@@ -41,12 +54,13 @@ The system intelligently extracts:
 - **Frontend**: HTML5, Tailwind CSS, JavaScript
 - **File Processing**: PyPDF2, python-docx
 - **Data Validation**: Pydantic
+- **Package Management**: uv (fast Python package installer and resolver)
 
 ## 📋 Prerequisites
 
 - **Python 3.8+**
 - **Claude CLI** installed and configured ([Setup Guide](https://docs.anthropic.com/en/docs/claude-code))
-- **uv** package manager (recommended) or pip
+- **uv** package manager ([Install uv](https://docs.astral.sh/uv/getting-started/installation/))
 
 ## 🚀 Quick Start
 
@@ -58,11 +72,7 @@ The system intelligently extracts:
 
 2. **Install dependencies**
    ```bash
-   # With uv (recommended)
    uv sync
-   
-   # Or with pip
-   pip install -e .
    ```
 
 3. **Configure Claude CLI**
@@ -73,7 +83,7 @@ The system intelligently extracts:
 
 4. **Run the application**
    ```bash
-   python app.py
+   uv run python app.py
    ```
 
 5. **Open your browser**
@@ -131,6 +141,14 @@ MAX_FILE_SIZE = 16 * 1024 * 1024  # 16MB
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'docx', 'doc'}
 ```
 
+## 📦 Why uv?
+
+This project uses [uv](https://github.com/astral-sh/uv) for dependency management because it's:
+- **⚡ 10-100x faster** than pip
+- **🔒 Reliable** with deterministic dependency resolution
+- **🎯 Simple** - drop-in replacement for pip
+- **🔄 Compatible** with standard Python packaging
+
 ## 🔒 Security & Privacy
 
 - **No data persistence**: Uploaded files are processed and can be automatically cleaned up
@@ -152,12 +170,13 @@ Contributions are welcome! Here's how to get started:
 ```bash
 # Clone your fork
 git clone https://github.com/yourusername/cv-parser.git
+cd cv-parser
 
 # Install development dependencies
-uv sync --dev
+uv sync
 
 # Run in development mode
-python app.py
+uv run python app.py
 ```
 
 ## 📝 License

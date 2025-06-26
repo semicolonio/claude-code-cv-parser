@@ -65,6 +65,7 @@ debug/
 *cv*
 *CV*
 !examples/sample_cv.txt
+!docs/media/cv-parser.mp4
 
 # Database files
 *.db
