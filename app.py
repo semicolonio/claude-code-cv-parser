@@ -4,6 +4,7 @@
 import json
 import subprocess
 import time
+import uuid
 from pathlib import Path
 from werkzeug.utils import secure_filename
 
@@ -344,6 +345,148 @@ def show_final_results():
     except json.JSONDecodeError:
         flash('Invalid candidate data format')
         return redirect(url_for('index'))
+
+
+# Store conversation sessions in memory (in production, use Redis or database)
+# Format: {conversation_id: [{"role": "user/assistant", "content": "message"}, ...]}
+conversation_sessions = {}
+
+
+@app.route('/api/chat', methods=['POST'])
+def chat_with_candidate():
+    """Handle chat messages about the candidate."""
+    print(f"\n=== Chat Request Received ===")
+    
+    data = request.json
+    user_message = data.get('message', '').strip()
+    candidate_data = data.get('candidate', {})
+    conversation_id = data.get('conversationId')
+    
+    print(f"User message: {user_message}")
+    print(f"Conversation ID: {conversation_id}")
+    print(f"Candidate name: {candidate_data.get('name', 'Unknown')}")
+    
+    if not user_message:
+        return jsonify({'error': 'No message provided'}), 400
+    
+    if not candidate_data:
+        return jsonify({'error': 'No candidate data provided'}), 400
+    
+    # Generate conversation ID if not provided
+    if not conversation_id:
+        conversation_id = str(uuid.uuid4())
+    
+    # Build context about the candidate
+    context = f"""You are a helpful assistant answering questions about a candidate's CV. Here is the candidate's information:
+
+Name: {candidate_data.get('name', 'Unknown')}
+Email: {candidate_data.get('email', 'Not provided')}
+Phone: {candidate_data.get('phone', 'Not provided')}
+
+Professional Summary:
+{candidate_data.get('summary', 'No summary provided')}
+
+Skills: {', '.join(candidate_data.get('skills', [])) if candidate_data.get('skills') else 'No skills listed'}
+
+Work Experience:
+"""
+    
+    for exp in candidate_data.get('experience', []):
+        context += f"\n- {exp.get('position', 'Unknown Position')} at {exp.get('company', 'Unknown Company')} ({exp.get('dates', 'Dates not specified')})"
+        if exp.get('description'):
+            context += f"\n  {exp.get('description')}"
+    
+    context += "\n\nEducation:\n"
+    for edu in candidate_data.get('education', []):
+        context += f"- {edu.get('degree', 'Unknown Degree')} from {edu.get('institution', 'Unknown Institution')} ({edu.get('dates', 'Dates not specified')})\n"
+    
+    if candidate_data.get('projects'):
+        context += "\n\nProjects:\n"
+        for proj in candidate_data.get('projects', []):
+            context += f"- {proj.get('name', 'Unnamed Project')}: {proj.get('description', 'No description')}\n"
+    
+    # Build conversation history
+    conversation_history = ""
+    if conversation_id in conversation_sessions:
+        # Add previous messages to context
+        conversation_history = "\n\nConversation History:\n"
+        for msg in conversation_sessions[conversation_id]:
+            conversation_history += f"{msg['role'].capitalize()}: {msg['content']}\n"
+    
+    # Build the full prompt with context, history, and current question
+    full_prompt = context + conversation_history + f"\n\nUser Question: {user_message}\n\nProvide a helpful, concise answer based on the candidate's information. If the information requested is not available in the CV, politely say so."
+    
+    try:
+        # Call Claude CLI with full context each time
+        cmd = ["claude", "-p", "--dangerously-skip-permissions", "--model", CLAUDE_MODEL]
+        
+        result = subprocess.run(
+            cmd,
+            input=full_prompt,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+        
+        if result.returncode == 0:
+            response = result.stdout.strip()
+            
+            # Clean up response if needed
+            if response.startswith("Assistant:"):
+                response = response[10:].strip()
+            
+            # Store conversation history
+            if conversation_id not in conversation_sessions:
+                conversation_sessions[conversation_id] = []
+            
+            # Add user message and assistant response to history
+            conversation_sessions[conversation_id].append({
+                'role': 'user',
+                'content': user_message
+            })
+            conversation_sessions[conversation_id].append({
+                'role': 'assistant', 
+                'content': response
+            })
+            
+            # Keep only last 10 exchanges to prevent context from growing too large
+            if len(conversation_sessions[conversation_id]) > 20:  # 20 = 10 exchanges * 2 messages
+                conversation_sessions[conversation_id] = conversation_sessions[conversation_id][-20:]
+            
+            # Log successful response
+            print(f"Chat response generated successfully for conversation {conversation_id}")
+            print(f"Conversation history length: {len(conversation_sessions[conversation_id])} messages")
+            
+            return jsonify({
+                'success': True,
+                'response': response,
+                'conversationId': conversation_id
+            })
+        else:
+            error_msg = f"Claude CLI error: {result.stderr}"
+            print(f"ERROR in chat endpoint: {error_msg}")
+            print(f"Command: {' '.join(cmd)}")
+            print(f"Return code: {result.returncode}")
+            return jsonify({
+                'success': False,
+                'error': error_msg
+            }), 500
+            
+    except subprocess.TimeoutExpired:
+        print("ERROR: Chat request timed out")
+        return jsonify({
+            'success': False,
+            'error': 'Request timed out'
+        }), 500
+    except Exception as e:
+        print(f"ERROR in chat endpoint: {str(e)}")
+        print(f"Exception type: {type(e).__name__}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 
 if __name__ == '__main__':
